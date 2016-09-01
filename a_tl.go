@@ -21,22 +21,19 @@ func asyncHttpGets(url string) []*HttpResponse {
 	letters := "abcdefghijklmnopqrstuvwxyz0123456789"
 	for _, l := range letters {
 		for _, m := range letters {
-			for _, k := range letters {
-				go func(l, m, k rune) {
-					fmt.Printf("trying %s\n", string(l)+string(m)+string(k))
-					// fmt.Printf("Fetching %s \n", url+string(l)+string(m))
-					resp, err := client.Get(url + string(l) + string(m) + string(k))
-					ch <- &HttpResponse{url, resp, err, string(l) + string(m) + string(k)}
-					if err != nil && resp != nil && resp.StatusCode != http.StatusOK {
-						fmt.Printf("%s: %d\n", string(l)+string(m), resp.StatusCode)
-						defer func() { resp.Body.Close() }()
-					} else {
-						fmt.Printf("* ")
-						resp.Body.Close()
-					}
-				}(l, m, k)
-				time.Sleep(10 * time.Millisecond)
-			}
+			go func(l, m rune) {
+				fmt.Printf("trying %s\n", string(l)+string(m))
+				// fmt.Printf("Fetching %s \n", url+string(l)+string(m))
+				resp, err := client.Get(url + string(l) + string(m))
+				ch <- &HttpResponse{url, resp, err, string(l) + string(m)}
+				if err != nil && resp != nil && resp.StatusCode != http.StatusOK {
+					fmt.Printf("%s: %d\n", string(l)+string(m), resp.StatusCode)
+				} else {
+					fmt.Printf("* ")
+					resp.Body.Close()
+				}
+			}(l, m)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 
@@ -50,7 +47,7 @@ func asyncHttpGets(url string) []*HttpResponse {
 			if r.response.StatusCode == 404 {
 				responses = append(responses, r)
 			}
-			if r.req == "999" {
+			if r.req == "99" {
 				return responses
 			}
 		case <-time.After(50 * time.Millisecond):
